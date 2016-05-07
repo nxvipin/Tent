@@ -1,0 +1,5 @@
+-type bint() :: integer().
+-type bstr() :: binary().
+-type blist() :: list(bval()).
+-type bdict() :: #{bstr() => bval()}.
+-type bval() :: bint() | bstr() | blist() | bdict().
