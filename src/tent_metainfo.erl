@@ -15,13 +15,17 @@ get(TorrentFile) ->
     Comment = maps:get(<<"comment">>, Data, undefined),
     CreatedBy = maps:get(<<"created by">>, Data, undefined),
     Encoding = maps:get(<<"encoding">>, Data, undefined),
-    Info = get_info(maps:get(<<"info">>, Data)),
+    RawInfo = maps:get(<<"info">>, Data),
+    {ok, BencodedInfo} = bencode:encode(RawInfo),
+    InfoHash = tent_utils:urlencode(crypto:hash(sha, BencodedInfo), []),
+    Info = get_info(RawInfo),
     {ok, #metainfo{announce=Announce,
                    announce_list=AnnounceList,
                    creation_date=CreationDate,
                    comment=Comment,
                    created_by=CreatedBy,
                    encoding=Encoding,
+                   info_hash=InfoHash,
                    info=Info}}.
 
 -spec get_info(bdict()) -> info().

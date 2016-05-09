@@ -18,6 +18,7 @@
                    comment :: undefined | binary(),
                    created_by :: undefined | binary(),
                    encoding :: undefined | binary(),
+                   info_hash :: binary(),
                    info :: info()}).
 
 
