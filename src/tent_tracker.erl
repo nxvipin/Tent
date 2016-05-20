@@ -5,7 +5,7 @@
          stop/2,
          complete/2,
          request/2,
-         make_request/1]).
+         do_request/1]).
 
 start(#metainfo{}=MetaInfo, #context{}=Context) ->
     request(MetaInfo, Context, started).
@@ -61,11 +61,10 @@ make_request_url([_H|_T]=BaseURL, [{Key, Value} | Rest]) ->
 make_request_url([_Head | BaseURL], []) ->
     iolist_to_binary(lists:reverse(BaseURL)).
 
--spec make_request(tracker_url()) ->
-                          {ok, binary()} |
-                          {http_error, httpc:status_code(), binary()} |
-                          {error, any()}.
-make_request(RequestURL0) ->
+-spec do_request(tracker_url()) -> {ok, binary()} |
+                                   {http_error, httpc:status_code(), binary()} |
+                                   {error, any()}.
+do_request(RequestURL0) ->
     RequestURL = binary_to_list(RequestURL0),
     case httpc:request(get, {RequestURL, []}, [], [{body_format, binary}]) of
         {ok, {{_V, 200, _R}, _H, Body}} ->
