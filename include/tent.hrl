@@ -21,10 +21,24 @@
                    info_hash :: binary(),
                    info :: info()}).
 
+-record(context, {peer_id :: binary(),
+                  port :: pos_integer(),
+                  uploaded=0:: non_neg_integer(),
+                  downloaded=0 :: non_neg_integer(),
+                  left :: non_neg_integer(),
+                  compact=0 :: 0 | 1,
+                  no_peer_id=false :: boolean(),
+                  ip=undefined :: undefined | binary(),
+                  numwant=50 :: pos_integer(),
+                  key=undefined :: undefined | binary(),
+                  tracker_id=undefined :: undefined | binary()}).
+
 
 -type single_file() :: #single_file{}.
 -type multi_file() :: #multi_file{}.
 -type info() :: #info{}.
 -type metainfo() :: #metainfo{}.
+-type context() :: #context{}.
 -type torrent_file() :: string().
 -type url_encoded_hash() :: binary().
+-type tracker_event() :: undefined | started | stopped | completed.
