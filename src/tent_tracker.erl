@@ -15,10 +15,11 @@ complete(#metainfo{}=MetaInfo, #context{}=Context) ->
 request(#metainfo{}=MetaInfo, #context{}=Context) ->
     request(MetaInfo, Context, undefined).
 
-request(#metainfo{announce=AnnounceURL, info_hash=InfoHash}=Metainfo,
+request(#metainfo{announce=AnnounceURL, info_hash=InfoHash}=_Metainfo,
         #context{}=Context, Event) ->
     RequestParams = make_request_params(InfoHash, Context, Event),
-    RequestURL = make_request_url(AnnounceURL, RequestParams).
+    RequestURL = make_request_url(AnnounceURL, RequestParams),
+    RequestURL.
 
 make_request_params(InfoHash, #context{peer_id=PeerId,
                                        port=Port,
@@ -56,7 +57,7 @@ make_request_url(BaseURL, Params) when is_binary(BaseURL)->
     end;
 make_request_url([_H|_T]=BaseURL, [{Key, Value} | Rest]) ->
     make_request_url([<<"&">>, Value, <<"=">>, Key |BaseURL], Rest);
-make_request_url([Head | BaseURL], []) ->
+make_request_url([_Head | BaseURL], []) ->
     iolist_to_binary(lists:reverse(BaseURL)).
 
 binary_boolean(true) ->
