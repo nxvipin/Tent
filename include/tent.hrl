@@ -41,4 +41,5 @@
 -type context() :: #context{}.
 -type torrent_file() :: string().
 -type url_encoded_hash() :: binary().
+-type tracker_url() :: binary().
 -type tracker_event() :: undefined | started | stopped | completed.

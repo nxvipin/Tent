@@ -4,7 +4,8 @@
 -export([start/2,
          stop/2,
          complete/2,
-         request/2]).
+         request/2,
+         make_request/1]).
 
 start(#metainfo{}=MetaInfo, #context{}=Context) ->
     request(MetaInfo, Context, started).
@@ -59,6 +60,26 @@ make_request_url([_H|_T]=BaseURL, [{Key, Value} | Rest]) ->
     make_request_url([<<"&">>, Value, <<"=">>, Key |BaseURL], Rest);
 make_request_url([_Head | BaseURL], []) ->
     iolist_to_binary(lists:reverse(BaseURL)).
+
+-spec make_request(tracker_url()) ->
+                          {ok, binary()} |
+                          {http_error, httpc:status_code(), binary()} |
+                          {error, any()}.
+make_request(RequestURL0) ->
+    RequestURL = binary_to_list(RequestURL0),
+    case httpc:request(get, {RequestURL, []}, [], [{body_format, binary}]) of
+        {ok, {{_V, 200, _R}, _H, Body}} ->
+            lager:debug("Tracker Request Success"),
+            {ok, Body};
+        {ok, {{_V, StatusCode, _R}, _H, Body}} ->
+            lager:error("Tracker Request HTTP Error(~p): ~p",
+                        [StatusCode, Body]),
+            {http_error, StatusCode, Body};
+        {error, Reason} ->
+            lager:error("Tracker Request Error: ~p", [Reason]),
+            {error, Reason}
+    end.
+
 
 binary_boolean(true) ->
     <<"true">>;
