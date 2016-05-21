@@ -5,7 +5,8 @@
          stop/2,
          complete/2,
          request/2,
-         do_request/1]).
+         do_request/1,
+         get_tracker_response/1]).
 
 start(#metainfo{}=MetaInfo, #context{}=Context) ->
     request(MetaInfo, Context, started).
@@ -20,7 +21,14 @@ request(#metainfo{announce=AnnounceURL, info_hash=InfoHash}=_Metainfo,
         #context{}=Context, Event) ->
     RequestParams = make_request_params(InfoHash, Context, Event),
     RequestURL = make_request_url(AnnounceURL, RequestParams),
-    RequestURL.
+    lager:debug("Sending Request(~p) to Url: ~p", [Event, RequestURL]),
+    case do_request(RequestURL) of
+        {ok, Resp} ->
+            get_tracker_response(Resp);
+        Error ->
+            lager:error("Tracker request failed with error: ~p", [Error]),
+            ok
+    end.
 
 make_request_params(InfoHash, #context{peer_id=PeerId,
                                        port=Port,
@@ -79,6 +87,36 @@ do_request(RequestURL0) ->
             {error, Reason}
     end.
 
+-spec get_tracker_response(binary()) -> {ok, tracker_response()} |
+                                        {error, term()} |
+                                        {tracker_error, term()}.
+get_tracker_response(Resp) when is_binary(Resp) ->
+    get_tracker_response(bencode:decode(Resp));
+get_tracker_response({ok, #{<<"failure reason">> := Reason}=_Data}) ->
+    {tracker_error, Reason};
+get_tracker_response({ok, #{<<"interval">> := Interval,
+                            <<"peers">> := [_H|_T]=Peers0}=Data}) ->
+
+    Peers = peer_list_transform(Peers0),
+    WarningMsg = maps:get(<<"warning message">>, Data, undefined),
+    MinInterval = maps:get(<<"min interval">>, Data, undefined),
+    TrackerID = maps:get(<<"tracker id">>, Data, undefined),
+    Complete = maps:get(<<"complete">>, Data, undefined),
+    Incomplete = maps:get(<<"incomplete">>, Data, undefined),
+
+    {ok, #tracker_response{interval=Interval,
+                           peers=Peers,
+                           warning_message=WarningMsg,
+                           min_interval=MinInterval,
+                           tracker_id=TrackerID,
+                           complete=Complete,
+                           incomplete=Incomplete}};
+get_tracker_response({ok, #{<<"interval">> := _Interval,
+                            <<"peers">> := <<_Peers/binary>>}=_Data}) ->
+    {error, "Binary Model Peer Unsupported"};
+get_tracker_response({error, _Error}) ->
+    {tracker_error, "Failed to decode tracker response"}.
+
 
 binary_boolean(true) ->
     <<"true">>;
@@ -108,3 +146,15 @@ event_opt(stopped) ->
     [{<<"event">>, <<"stopped">>}];
 event_opt(completed) ->
     [{<<"event">>, <<"completed">>}].
+
+peer_list_transform(PeerList) ->
+    peer_list_transform(PeerList, []).
+peer_list_transform([], Acc) ->
+    Acc;
+peer_list_transform([Peer | Rest], Acc) ->
+    peer_list_transform(Rest, [peer_map_transform(Peer) | Acc]).
+
+peer_map_transform(#{<<"ip">> := IP, <<"port">> := Port}=Peer) ->
+    %% [TODO]: Aesthetics over Efficieny. Maybe reconsider (or not)?
+    PeerID = maps:get(<<"peer id">>, Peer, undefined),
+    #{peer_id => PeerID, ip => IP, port => Port}.
