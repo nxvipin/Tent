@@ -33,6 +33,15 @@
                   key=undefined :: undefined | binary(),
                   tracker_id=undefined :: undefined | binary()}).
 
+-record(tracker_response, {interval :: pos_integer(),
+                           peers :: #{peer_id => undefined | binary(),
+                                      ip => binary(),
+                                      port => pos_integer()},
+                           warning_message :: undefined | binary(),
+                           min_interval :: undefined | pos_integer(),
+                           tracker_id :: undefined | binary(),
+                           complete :: undefined | pos_integer(),
+                           incomplete :: undefined | pos_integer()}).
 
 -type single_file() :: #single_file{}.
 -type multi_file() :: #multi_file{}.
@@ -43,3 +52,4 @@
 -type url_encoded_hash() :: binary().
 -type tracker_url() :: binary().
 -type tracker_event() :: undefined | started | stopped | completed.
+-type tracker_response() :: #tracker_response{}.
